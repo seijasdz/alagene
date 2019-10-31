@@ -1,0 +1,9 @@
+**/venv
+**/.idea
+**/.directory
+**/__pycache__
+**/venv2
+*TSS*.txt
+**/*.pyc
+all_promoters_-499_5.fa
+representative_promo_-499_5.fa
