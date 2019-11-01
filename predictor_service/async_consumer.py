@@ -22,10 +22,10 @@ class Consumer(object):
     If the channel is closed, it will indicate a problem with one of the
     commands that were issued and that should surface in the output as well.
     """
-    EXCHANGE = 'scale_car'
+    EXCHANGE = 'gene_prediction'
     EXCHANGE_TYPE = 'topic'
-    QUEUE = 'scale'
-    ROUTING_KEY = 'scale.weight'
+    QUEUE = ''
+    ROUTING_KEY = 'prediction.created'
 
     def __init__(self, amqp_url, callback):
         """Create a new instance of the consumer class, passing in the AMQP
@@ -279,6 +279,7 @@ class Consumer(object):
                     basic_deliver.delivery_tag, properties.app_id, body)
 
         self.callback(body)
+        print('ddd')
         self.acknowledge_message(basic_deliver.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):

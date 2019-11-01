@@ -1,15 +1,12 @@
 from threading import Thread
 import time
-
-
-def dummy_slow(gene):
-    time.sleep(10)
-    print(gene, time.time())
-
+from gene_predictor import predict_all
 
 def process(message):
+    print(message)
     def wrap():
-        dummy_slow(message)
+        print(message)
+        predict_all(message)
 
     t = Thread(target=wrap)
     t.start()
