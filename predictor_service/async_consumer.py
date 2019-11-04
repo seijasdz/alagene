@@ -24,7 +24,7 @@ class Consumer(object):
     """
     EXCHANGE = 'gene_prediction'
     EXCHANGE_TYPE = 'topic'
-    QUEUE = ''
+    QUEUE = 'prediction_consumer'
     ROUTING_KEY = 'prediction.created'
 
     def __init__(self, amqp_url, callback):
@@ -279,7 +279,6 @@ class Consumer(object):
                     basic_deliver.delivery_tag, properties.app_id, body)
 
         self.callback(body)
-        print('ddd')
         self.acknowledge_message(basic_deliver.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):

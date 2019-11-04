@@ -1,4 +1,6 @@
 from pomegranate import HiddenMarkovModel
+import numpy
+from converter_to import converter_to
 
 
 def intron_counter(seq):
@@ -63,8 +65,11 @@ def predict_all_old(seq, string):
     #print(intron_counter(path_names))
 
 
-def predict_all(seq, string):
+def predict_all(string):
+    seq = numpy.array(converter_to(list(string), 2), numpy.unicode_)
+
     path_names = predict_path(coding_model, seq)
     print(path_names)
     # print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
     return path_names
+
