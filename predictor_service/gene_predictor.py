@@ -16,19 +16,13 @@ def find_gene_cut_index(path_names, last_elements):
 
 
 def find_intercoding_region(begins, ends, seq):
-    cuts = []
     subseqs = []
-    print(begins)
-    print(ends)
-    for i, begin_point in enumerate(begins):
-        if i < len(ends) and i < len(begins):
-            if i == 0:
-                cuts.append((0, begin_point))
-            else:
-                cuts.append((ends[i - 1], begin_point))
-    print(cuts)
-    for cut in cuts:
-        subseqs.append(seq[cut[0]: cut[1]])
+    for i, b in enumerate(begins):
+        if i == 0:
+            before = 0
+        else:
+            before = ends[i - 1] + 1
+        subseqs.append(seq[before: b])
     return subseqs
 
 
@@ -53,7 +47,7 @@ def predict_all_old(seq, string):
     print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
 
     starts = find_gene_cut_index(path_names, ['start zone7'])
-    ends = find_gene_cut_index(path_names, ['stop zone taa9', 'stop zone tag9', 'stop zone tga9'])
+    ends = find_gene_cut_index(path_names, ['post_poly_spacer14'])
 
     ext_subseq = find_intercoding_region(starts, ends, seq)
 
@@ -65,11 +59,38 @@ def predict_all_old(seq, string):
     #print(intron_counter(path_names))
 
 
+def divide_genes(begins, ends, seq):
+    divided = []
+    for i, b in enumerate(begins):
+        if i < len(ends):
+            end = ends[i] + 1
+        else:
+            end = -1
+        divided.append(seq[b: end])
+    return divided
+
+
 def predict_all(string):
     seq = numpy.array(converter_to(list(string), 2), numpy.unicode_)
 
     path_names = predict_path(coding_model, seq)
     print(path_names)
+    starts = find_gene_cut_index(path_names, ['start zone7'])
+    ends = find_gene_cut_index(path_names, ['post_poly_spacer14'])
+
+    genes = divide_genes(starts, ends, path_names)
+    utr5s = find_intercoding_region(starts, ends, seq)
+
+    full_seqs = []
+    complete_seq = []
+    for i, utr in enumerate(utr5s):
+        path = predict_path(promoter_utr_model, utr)
+        complete = path[1:-1] + genes[i]
+        # full_seqs.append(complete)
+        complete_seq += complete
+
+    print(len(complete_seq), len(seq))
+    print([(x, seq[i]) for i, x in enumerate(complete_seq)])
     # print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
     return path_names
 
