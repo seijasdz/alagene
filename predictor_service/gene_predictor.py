@@ -11,8 +11,8 @@ def intron_counter(seq):
     return icounts
 
 
-def find_gene_cut_index(path_names, last_elements):
-    return [i for i, e in enumerate(path_names) if e in last_elements]
+def find_gene_cut_index(path_names, valid_elements):
+    return [i for i, e in enumerate(path_names) if e in valid_elements]
 
 
 def find_intercoding_region(begins, ends, seq):
@@ -52,10 +52,10 @@ def predict_all_old(seq, string):
 
     print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
 
-    starts = find_gene_cut_index(path_names, ['start zone7'])
-    ends = find_gene_cut_index(path_names, ['stop zone taa9', 'stop zone tag9', 'stop zone tga9'])
+    cds_starts = find_gene_cut_index(path_names, ['start zone7'])
+    gene_end = find_gene_cut_index(path_names, ['post_poly_spacer14'])
 
-    ext_subseq = find_intercoding_region(starts, ends, seq)
+    ext_subseq = find_intercoding_region(cds_starts, gene_end, seq)
 
     for subs in ext_subseq:
         print('pass')
