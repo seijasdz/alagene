@@ -70,6 +70,47 @@ def divide_genes(begins, ends, seq):
     return divided
 
 
+def get_genes(seq):
+    in_gene = False
+    cuts = []
+    start = -1
+    for i, part in enumerate(seq):
+        if part != 'back' and not in_gene:
+            in_gene = True
+            start = i
+        elif part == 'back' and in_gene:
+            in_gene = False
+            stop = i
+            cuts.append((start, stop))
+        elif part != 'back' and in_gene and i == len(seq) -1:
+            stop = i
+            cuts.append((start, stop))
+    print(cuts)
+
+def get_cds(seq):
+    in_cds = False
+    cuts = []
+    start = -1
+    start_s = ''
+    start_zones = ['start zone7', 'acceptor014', 'acceptor114', 'acceptor214']
+    stop_zones = ['donor03', 'donor14', 'donor25', 'stop zone tga9', 'stop zone tag9', 'stop zone taa9']
+    for i, part in enumerate(seq):
+        if part in start_zones and not in_cds:
+            in_cds = True
+            start = i
+            start_s = part
+        elif part in stop_zones and in_cds:
+            in_cds = False
+            cuts.append((start, i))
+        elif in_cds and i == len(seq) - 1:
+            cuts.append((start, i))
+    print(cuts)
+
+def get_zones(seq):
+    genes = get_genes(seq)
+    get_cds(seq)
+
+
 def predict_all(string):
     seq = numpy.array(converter_to(list(string), 2), numpy.unicode_)
 
@@ -88,9 +129,9 @@ def predict_all(string):
         complete = path[1:-1] + genes[i]
         # full_seqs.append(complete)
         complete_seq += complete
-
-    print(len(complete_seq), len(seq))
-    print([(x, seq[i]) for i, x in enumerate(complete_seq)])
+    get_zones(complete_seq)
+    #print(len(complete_seq), len(seq))
+    #print([(x, seq[i]) for i, x in enumerate(complete_seq)])
     # print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
     return path_names
 
