@@ -1,6 +1,7 @@
 from pomegranate import HiddenMarkovModel
 import numpy
 from converter_to import converter_to
+import json
 
 
 def intron_counter(seq):
@@ -16,19 +17,13 @@ def find_gene_cut_index(path_names, valid_elements):
 
 
 def find_intercoding_region(begins, ends, seq):
-    cuts = []
     subseqs = []
-    print(begins)
-    print(ends)
-    for i, begin_point in enumerate(begins):
-        if i < len(ends) and i < len(begins):
-            if i == 0:
-                cuts.append((0, begin_point))
-            else:
-                cuts.append((ends[i - 1], begin_point))
-    print(cuts)
-    for cut in cuts:
-        subseqs.append(seq[cut[0]: cut[1]])
+    for i, b in enumerate(begins):
+        if i == 0:
+            before = 0
+        else:
+            before = ends[i - 1] + 1
+        subseqs.append(seq[before: b])
     return subseqs
 
 
@@ -55,6 +50,7 @@ def predict_all_old(seq, string):
     cds_starts = find_gene_cut_index(path_names, ['start zone7'])
     gene_end = find_gene_cut_index(path_names, ['post_poly_spacer14'])
 
+
     ext_subseq = find_intercoding_region(cds_starts, gene_end, seq)
 
     for subs in ext_subseq:
@@ -65,11 +61,118 @@ def predict_all_old(seq, string):
     #print(intron_counter(path_names))
 
 
+def divide_genes(begins, ends, seq):
+    divided = []
+    for i, b in enumerate(begins):
+        if i < len(ends):
+            end = ends[i] + 1
+        else:
+            end = -1
+        divided.append(seq[b: end])
+    return divided
+
+
+def get_genes(seq):
+    in_gene = False
+    cuts = []
+    start = -1
+    for i, part in enumerate(seq):
+        if part != 'back' and not in_gene:
+            in_gene = True
+            start = i
+        elif part == 'back' and in_gene:
+            in_gene = False
+            stop = i
+            cuts.append((start, stop))
+        elif part != 'back' and in_gene and i == len(seq) -1:
+            stop = i
+            cuts.append((start, stop))
+    return cuts
+
+def get_cds(seq):
+    in_cds = False
+    cuts = []
+    start = -1
+    start_s = ''
+    start_zones = ['start zone7', 'acceptor014', 'acceptor114', 'acceptor214']
+    stop_zones = ['donor03', 'donor14', 'donor25', 'stop zone tga9', 'stop zone tag9', 'stop zone taa9']
+    for i, part in enumerate(seq):
+        if part in start_zones and not in_cds:
+            in_cds = True
+            start = i
+            start_s = part
+        elif part in stop_zones and in_cds:
+            in_cds = False
+            cuts.append((start, i))
+        elif in_cds and i == len(seq) - 1:
+            cuts.append((start, i))
+    return cuts
+
+
+def get_exons(seq):
+    in_cds = False
+    cuts = []
+    start = -1
+    start_s = ''
+    start_zones = ['utr exon', 'start zone7', 'acceptor014', 'acceptor114', 'acceptor214']
+    stop_zones = ['donorx00', 'donor03', 'donor14', 'donor25', 'poly a zone 0']
+    for i, part in enumerate(seq):
+        if part in start_zones and not in_cds:
+            in_cds = True
+            start = i
+            start_s = part
+        elif part in stop_zones and in_cds:
+            in_cds = False
+            cuts.append((start, i))
+        elif in_cds and i == len(seq) - 1:
+            cuts.append((start, i))
+    return cuts
+
+
+def get_zones(seq):
+    result = {
+        'genes': []
+    }
+    genes = get_genes(seq)
+    coding_sequences = get_cds(seq)
+    exons = get_exons(seq)
+    for gene in genes:
+        new_gene = {
+            'ss': gene,
+            'exon': [],
+            'cds': [],
+        }
+        for exon in exons:
+            if exon[0] >= gene[0] and exon[1] <= gene[1]:
+                new_gene['exon'].append(exon)
+        for cds in coding_sequences:
+            if cds[0] >= gene[0] and cds[1] <= gene[1]:
+                new_gene['cds'].append(cds)
+        result['genes'].append(new_gene)
+    print(result)
+    return result
+
+
 def predict_all(string):
     seq = numpy.array(converter_to(list(string), 2), numpy.unicode_)
 
     path_names = predict_path(coding_model, seq)
-    print(path_names)
-    # print([(string[i + 1], name, i - len(path_names) + 1) for i, name in enumerate(path_names) if i + 1 < len(string)])
-    return path_names
+
+    starts = find_gene_cut_index(path_names, ['start zone7'])
+    ends = find_gene_cut_index(path_names, ['post_poly_spacer14'])
+
+    genes = divide_genes(starts, ends, path_names)
+    utr5s = find_intercoding_region(starts, ends, seq)
+
+    full_seqs = []
+    complete_seq = []
+    for i, utr in enumerate(utr5s):
+        path = predict_path(promoter_utr_model, utr)
+        complete = path[1:-1] + genes[i]
+        # full_seqs.append(complete)
+        complete_seq += complete
+
+    zones = get_zones(complete_seq)
+
+    return zones
 
