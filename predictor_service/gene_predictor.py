@@ -1,7 +1,7 @@
 from pomegranate import HiddenMarkovModel
 import numpy
 from converter_to import converter_to
-import json
+
 
 
 def intron_counter(seq):
@@ -109,6 +109,15 @@ def get_cds(seq):
     return cuts
 
 
+def get_bindings(seq):
+    valid_bindings = ['inr2', 'no inr2', 'tata3', '']
+    bindings = []
+    for i, part in enumerate(seq):
+        if part in valid_bindings:
+            bindings.append(i)
+    return bindings
+
+
 def get_exons(seq):
     in_cds = False
     cuts = []
@@ -136,12 +145,18 @@ def get_zones(seq):
     genes = get_genes(seq)
     coding_sequences = get_cds(seq)
     exons = get_exons(seq)
+    bindings = get_bindings(seq)
     for gene in genes:
         new_gene = {
+            'binding': 0,
             'ss': gene,
             'exon': [],
             'cds': [],
         }
+
+        for binding in bindings:
+            if gene[0] > binding > new_gene['binding']:
+                new_gene['binding'] = binding
         for exon in exons:
             if exon[0] >= gene[0] and exon[1] <= gene[1]:
                 new_gene['exon'].append(exon)
