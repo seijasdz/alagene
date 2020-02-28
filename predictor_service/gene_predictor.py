@@ -110,7 +110,7 @@ def get_cds(seq):
 
 
 def get_bindings(seq):
-    valid_bindings = ['inr2', 'no inr2', 'tata3', '']
+    valid_bindings = ['inr2', 'no inr2', 'tata3', 'GC7', 'CAT8']
     bindings = []
     for i, part in enumerate(seq):
         if part in valid_bindings:
@@ -146,25 +146,27 @@ def get_zones(seq):
     coding_sequences = get_cds(seq)
     exons = get_exons(seq)
     bindings = get_bindings(seq)
+
     for gene in genes:
+
         new_gene = {
-            'binding': 0,
+            'binding': [],
             'ss': gene,
             'exon': [],
             'cds': [],
         }
 
-        for binding in bindings:
-            if gene[0] > binding > new_gene['binding']:
-                new_gene['binding'] = binding
         for exon in exons:
             if exon[0] >= gene[0] and exon[1] <= gene[1]:
                 new_gene['exon'].append(exon)
         for cds in coding_sequences:
             if cds[0] >= gene[0] and cds[1] <= gene[1]:
                 new_gene['cds'].append(cds)
+        for binding in bindings:
+            if gene[0] < binding < new_gene['exon'][0][0]:
+                new_gene['binding'].append(binding)
         result['genes'].append(new_gene)
-    print(result)
+        print(result)
     return result
 
 
